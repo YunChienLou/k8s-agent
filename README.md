@@ -79,7 +79,7 @@ Windows 可用 Git Bash 執行腳本，或用 IDE 開 `scripts/requests.http`。
 ## Roadmap
 
 - [x] **M0** 舊系統 + SSO：三個假系統、Keycloak、JWT 權限規則、smoke test
-- [ ] **M0.5** 舊系統改為申請單流程（改寄申請、補償簽核）+ 兩頁傳統待辦畫面（ADR-0003）
+- [ ] **M0.5** 舊系統改為申請單流程（改寄申請、補償簽核）+ 舊系統 Vue 前端（審核頁、待簽核頁）（ADR-0003）
 - [ ] **M1** Adapter spike：MCP tool 帶 JWT 呼叫舊系統（用 MCP Inspector 驗證）
 - [ ] **M2** Adapter 改為 `tools.yaml` 驅動：多步驟組合、JSONPath 裁切、稽核 log
 - [ ] **M3** Agent：LangGraph 跨系統查詢 + `interrupt()` 人工確認
@@ -92,4 +92,3 @@ Windows 可用 Git Bash 執行腳本，或用 IDE 開 `scripts/requests.http`。
 - **各系統自行簽發 token**：本 demo 假設公司 SSO 發的 OIDC token 各系統都認。若舊系統登入後另發自己的 session／JWT，需要 **token exchange（RFC 8693）**
 - **舊系統沒有 OpenAPI spec**：本 demo 用 springdoc 自動產生；真實情況常需手寫
 - **確認延遲與 token 過期**：確認可能等上數小時，確認時必須使用當下有效的 token 提單
-- **舊系統沒有申請單流程**：則無法零改動顯示通知，需改用外部通知或少量前端修改（ADR-0003）
