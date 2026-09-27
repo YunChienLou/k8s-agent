@@ -32,7 +32,7 @@
 - **Adapter pod**：同一個 image，每個舊系統配一份 `tools.yaml`（ConfigMap）。組合多支 API、裁切欄位、標註風險等級
 - **Agent**：Python + LangGraph，透過 `langchain-mcp-adapters` 呼叫 adapter
 - **LLM 可切換**：開發與 demo 用雲端 API，正式環境一律地端（vLLM），只改環境變數；embedding 從 demo 起即地端；地端模型須通過評測集才能上線
-- **RAG 對齊規章**：寫入類建議必先查規章並附引用出處，引用由程式驗證（ADR-0004）
+- **RAG 對齊規章**：寫入類建議必先查規章並附引用出處，引用由程式驗證（ADR-0004）；規章從既有知識庫同步，發布即生效、可回滾（ADR-0005）
 - **確認 ≠ 授權**：使用者確認的是意圖；能不能執行由舊系統判斷。Adapter 另外檢查「使用者確實確認過」，就算 Agent 被繞過也無法提單
 
 設計決策見 [docs/adr/](docs/adr/)。
@@ -94,4 +94,5 @@ Windows 可用 Git Bash 執行腳本，或用 IDE 開 `scripts/requests.http`。
 
 - **各系統自行簽發 token**：本 demo 假設公司 SSO 發的 OIDC token 各系統都認。若舊系統登入後另發自己的 session／JWT，需要 **token exchange（RFC 8693）**
 - **舊系統沒有 OpenAPI spec**：本 demo 用 springdoc 自動產生；真實情況常需手寫
+- **跨系統無法原子化**：多個舊系統各自審核，可能部分完成；以 Saga（依序提單、人工決定補償、逾時提醒）處理，無法憑空創造原子性（ADR-0006）
 - **確認延遲與 token 過期**：確認可能等上數小時，確認時必須使用當下有效的 token 提單
