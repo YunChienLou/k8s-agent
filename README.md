@@ -6,7 +6,7 @@
 這個專案示範另一條路：**在 K8s 旁邊加一個 adapter pod**，把舊系統的 API 轉成 Agent 能用的 tool，
 並且把企業最在意的三件事做好：
 
-- **權限繼承**：Agent 帶的是「使用者本人」的 JWT，舊系統原本的權限規則照樣生效
+- **權限繼承**：每一段以 token exchange 換成只給下一站用的 token，身分始終是使用者本人，舊系統原本的權限規則照樣生效（ADR-0007）
 - **人確認意圖、舊系統決定**：查詢自動執行；寫入動作先由使用者在「行動卡片」確認，再到舊系統**提單**，由舊系統既有的人員與規則決定能否執行
 - **稽核追蹤**：誰、在什麼時候、透過 Agent 呼叫了什麼、依據是什麼
 
@@ -26,7 +26,7 @@
 ```
  Vue3 Copilot ──► Agent (FastAPI + LangGraph) ──MCP──► Adapter pods (Java) ──REST──► 舊系統
       │                  │  interrupt() 人工確認          │  tools.yaml 定義任務型 tool      │
-      └──── JWT（公司 SSO：Keycloak）一路傳到底 ───────────┴──────────────────────────────┘
+      └──── 公司 SSO（Keycloak）逐段 token exchange：每張 token 只給下一站 ─┴────────────────┘
 ```
 
 - **Adapter pod**：同一個 image，每個舊系統配一份 `tools.yaml`（ConfigMap）。組合多支 API、裁切欄位、標註風險等級
@@ -36,6 +36,18 @@
 - **確認 ≠ 授權**：使用者確認的是意圖；能不能執行由舊系統判斷。Adapter 另外檢查「使用者確實確認過」，就算 Agent 被繞過也無法提單
 
 設計決策見 [docs/adr/](docs/adr/)。
+
+## Build vs Buy
+
+市面 MCP gateway 解決的是「Agent 能不能安全地呼叫 API」；本專案要解決的是「Agent 怎麼照公司原本的規矩把事情辦完」。
+
+| 層 | 內容 | 策略 |
+|---|---|---|
+| 門禁層 | 驗證、token exchange、tool 白名單、稽核 | 依標準介面自建，可替換為現成 gateway |
+| Tool 定義層 | `tools.yaml` 任務型 tool | 宣告式，替換時轉格式 |
+| 辦事流程層 | 確認卡片、送進舊系統簽核、規章 RAG、Saga | 自建，本專案核心 |
+
+判斷表與理由見 [ADR-0008](docs/adr/0008-layering-and-build-vs-buy.md)。
 
 ## 目錄
 
@@ -94,5 +106,6 @@ Windows 可用 Git Bash 執行腳本，或用 IDE 開 `scripts/requests.http`。
 
 - **各系統自行簽發 token**：本 demo 假設公司 SSO 發的 OIDC token 各系統都認。若舊系統登入後另發自己的 session／JWT，需要 **token exchange（RFC 8693）**
 - **舊系統沒有 OpenAPI spec**：本 demo 用 springdoc 自動產生；真實情況常需手寫
+- **舊系統需驗證 `aud`**：token exchange 要完整生效，舊系統須加上 audiences 設定（設定變更，不改程式）；做不到的系統列入風險清單（ADR-0007）
 - **跨系統無法原子化**：多個舊系統各自審核，可能部分完成；以 Saga（依序提單、人工決定補償、逾時提醒）處理，無法憑空創造原子性（ADR-0006）
 - **確認延遲與 token 過期**：確認可能等上數小時，確認時必須使用當下有效的 token 提單
