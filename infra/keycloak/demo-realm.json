@@ -1,0 +1,69 @@
+{
+  "realm": "demo",
+  "enabled": true,
+  "displayName": "Legacy AI Bridge Demo (模擬公司 SSO)",
+  "accessTokenLifespan": 900,
+  "sslRequired": "none",
+  "roles": {
+    "realm": [
+      { "name": "cs_agent", "description": "客服人員：只能處理指派給自己的工單，單筆補償上限 100 元" },
+      { "name": "cs_supervisor", "description": "客服主管：可看全部工單，單筆補償上限 500 元" },
+      { "name": "sre", "description": "維運人員（預留給 M6 AIOps）" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "copilot-web",
+      "name": "Copilot Web (Vue)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["http://localhost:5173/*"],
+      "webOrigins": ["http://localhost:5173"],
+      "attributes": { "pkce.code.challenge.method": "S256" }
+    }
+  ],
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Alice",
+      "lastName": "Lin",
+      "email": "alice@demo.local",
+      "credentials": [{ "type": "password", "value": "alice", "temporary": false }],
+      "realmRoles": ["cs_agent"]
+    },
+    {
+      "username": "bob",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Bob",
+      "lastName": "Chen",
+      "email": "bob@demo.local",
+      "credentials": [{ "type": "password", "value": "bob", "temporary": false }],
+      "realmRoles": ["cs_agent"]
+    },
+    {
+      "username": "carol",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Carol",
+      "lastName": "Wu",
+      "email": "carol@demo.local",
+      "credentials": [{ "type": "password", "value": "carol", "temporary": false }],
+      "realmRoles": ["cs_supervisor"]
+    },
+    {
+      "username": "dave",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Dave",
+      "lastName": "Huang",
+      "email": "dave@demo.local",
+      "credentials": [{ "type": "password", "value": "dave", "temporary": false }],
+      "realmRoles": ["sre"]
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+name: legacy-ai-bridge
+
+x-legacy-env: &legacy-env
+  # token 由瀏覽器／curl 經 localhost:8080 取得，所以 iss 是 localhost；
+  # 容器內則透過 keycloak:8080 抓公鑰驗簽。
+  OIDC_ISSUER_URI: http://localhost:8080/realms/demo
+  OIDC_JWK_SET_URI: http://keycloak:8080/realms/demo/protocol/openid-connect/certs
+
+services:
+  # ── 模擬公司 SSO ─────────────────────────────────────────
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: http://localhost:8080          # 固定 token 的 iss
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"     # 容器內可用 keycloak:8080 存取
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
+
+  # ── 三個「舊系統」：完全不含 AI 套件 ─────────────────────
+  order-service:
+    build: ../legacy/order-service
+    environment: *legacy-env
+    ports:
+      - "8081:8081"
+    depends_on: [keycloak]
+
+  logistics-service:
+    build: ../legacy/logistics-service
+    environment: *legacy-env
+    ports:
+      - "8082:8082"
+    depends_on: [keycloak]
+
+  ticket-service:
+    build: ../legacy/ticket-service
+    environment: *legacy-env
+    ports:
+      - "8083:8083"
+    depends_on: [keycloak]
+
+  # ── 之後的里程碑會加入 ───────────────────────────────────
+  # adapter-order / adapter-logistics / adapter-ticket  (M1：同一個 image + 不同 tools.yaml)
+  # agent        (M3：FastAPI + LangGraph)
+  # postgres     (M2：稽核 log、待審核請求、run trace)
+  # web          (M4：Vue3 Copilot)

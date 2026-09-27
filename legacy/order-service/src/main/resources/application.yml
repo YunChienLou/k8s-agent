@@ -1,0 +1,25 @@
+server:
+  port: 8081
+  error:
+    include-message: always   # 讓 403/404 的原因回傳給呼叫端（之後 Agent 需要據此解釋）
+
+spring:
+  application:
+    name: order-service
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # issuer-uri 只用來驗證 iss claim；有設 jwk-set-uri 時不會做 discovery
+          issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8080/realms/demo}
+          jwk-set-uri: ${OIDC_JWK_SET_URI:http://localhost:8080/realms/demo/protocol/openid-connect/certs}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

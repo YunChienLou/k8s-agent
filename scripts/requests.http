@@ -1,0 +1,40 @@
+### 給 IntelliJ HTTP Client / VS Code REST Client 用（Windows 不想用 bash 時）
+
+### 1. 取得 alice 的 token
+# @name login
+POST http://localhost:8080/realms/demo/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=copilot-web&username=alice&password=alice
+
+> {% client.global.set("token", response.body.access_token); %}
+
+### 2. alice 的工單列表（只會看到指派給她的 T-1001、T-1003）
+GET http://localhost:8083/api/tickets
+Authorization: Bearer {{token}}
+
+### 3. 訂單 O-2001
+GET http://localhost:8081/api/orders/O-2001
+Authorization: Bearer {{token}}
+
+### 4. 貨件 S-3001（延誤中）
+GET http://localhost:8082/api/shipments/S-3001
+Authorization: Bearer {{token}}
+
+### 5. 越權：bob 的工單 → 403
+GET http://localhost:8083/api/tickets/T-1002
+Authorization: Bearer {{token}}
+
+### 6. 改寄到公司（寫入動作，之後要走人工審核）
+POST http://localhost:8082/api/shipments/S-3001/redirect
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "newAddress": "台北市信義區松仁路 100 號 12 樓", "reason": "客人下週出差，改寄公司" }
+
+### 7. 補償運費 60 元（alice 上限 100）
+POST http://localhost:8083/api/tickets/T-1001/compensations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "type": "SHIPPING_FEE_REFUND", "amount": 60, "reason": "物流延誤，補償改寄運費" }

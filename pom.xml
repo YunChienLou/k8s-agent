@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 僅供 IDE 一次匯入所有 Java 專案；各舊系統仍是獨立專案（不共用 parent） -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.legacyai</groupId>
+    <artifactId>legacy-ai-bridge</artifactId>
+    <version>0.1.0</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>legacy/order-service</module>
+        <module>legacy/logistics-service</module>
+        <module>legacy/ticket-service</module>
+    </modules>
+</project>
