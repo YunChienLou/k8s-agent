@@ -31,7 +31,7 @@
 
 - **Adapter pod**：同一個 image，每個舊系統配一份 `tools.yaml`（ConfigMap）。組合多支 API、裁切欄位、標註風險等級
 - **Agent**：Python + LangGraph，透過 `langchain-mcp-adapters` 呼叫 adapter
-- **LLM 可切換**：demo 用雲端 API，正式環境一律地端（vLLM／Ollama），只改環境變數；embedding 從 demo 起即地端
+- **LLM 可切換**：開發與 demo 用雲端 API，正式環境一律地端（vLLM），只改環境變數；embedding 從 demo 起即地端；地端模型須通過評測集才能上線
 - **RAG 對齊規章**：寫入類建議必先查規章並附引用出處，引用由程式驗證（ADR-0004）
 - **確認 ≠ 授權**：使用者確認的是意圖；能不能執行由舊系統判斷。Adapter 另外檢查「使用者確實確認過」，就算 Agent 被繞過也無法提單
 
