@@ -21,7 +21,7 @@ Agent 呼叫舊系統時，可以用一個高權限的 service account，也可�
 
 - Token **只在 HTTP header 傳遞**，絕不進入 prompt，也不能成為 tool 參數（避免 prompt injection 竊取）
 - 稽核 log 只記錄 `sub`、`preferred_username` 等 claim，不記錄 token 本身
-- 人工審核可能延遲數小時：**核准時由前端帶上當下有效的 token** 執行寫入，不重用發起時的 token
+- 人工確認可能延遲數小時：**確認時由前端帶上當下有效的 token** 提單，不重用發起時的 token
 
 ## 取捨
 
