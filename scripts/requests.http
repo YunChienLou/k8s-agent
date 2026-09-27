@@ -1,40 +1,72 @@
 ### 給 IntelliJ HTTP Client / VS Code REST Client 用（Windows 不想用 bash 時）
+### 每個舊系統只接受「發給自己的 token」（aud），所以要從對應的前端 client 取 token
 
-### 1. 取得 alice 的 token
-# @name login
+### 1. alice 從工單系統前端登入
+POST http://localhost:8080/realms/demo/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=ticket-web&username=alice&password=alice
+
+> {% client.global.set("aliceTicket", response.body.access_token); %}
+
+### 2. alice 從物流系統前端登入
+POST http://localhost:8080/realms/demo/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=logistics-web&username=alice&password=alice
+
+> {% client.global.set("aliceLogi", response.body.access_token); %}
+
+### 3. 物流人員 wang 從物流系統前端登入
+POST http://localhost:8080/realms/demo/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=logistics-web&username=wang&password=wang
+
+> {% client.global.set("wangLogi", response.body.access_token); %}
+
+### 4. alice 的工單（只會看到 T-1001、T-1003）
+GET http://localhost:8083/api/tickets
+Authorization: Bearer {{aliceTicket}}
+
+### 5. 越權：bob 的工單 → 403
+GET http://localhost:8083/api/tickets/T-1002
+Authorization: Bearer {{aliceTicket}}
+
+### 6. 拿工單系統的 token 打物流系統 → 401（aud 不符）
+GET http://localhost:8082/api/shipments/S-3001
+Authorization: Bearer {{aliceTicket}}
+
+### 7. 建立改寄申請（待物流人員執行，地址還不會變）
+POST http://localhost:8082/api/redirect-requests
+Authorization: Bearer {{aliceLogi}}
+Content-Type: application/json
+
+{ "shipmentId": "S-3001", "newAddress": "台北市信義區松仁路 100 號 12 樓", "reason": "客人下週出差，改寄公司" }
+
+> {% client.global.set("rrId", response.body.id); %}
+
+### 8. 物流人員執行改寄
+POST http://localhost:8082/api/redirect-requests/{{rrId}}/execute
+Authorization: Bearer {{wangLogi}}
+
+### 9. 補償 150 元（超過 alice 上限 → 202 待主管簽核）
+POST http://localhost:8083/api/tickets/T-1001/compensations
+Authorization: Bearer {{aliceTicket}}
+Content-Type: application/json
+
+{ "type": "COUPON", "amount": 150, "reason": "客人很生氣", "channel": "AI_COPILOT" }
+
+### 10. Token exchange：alice 從 Copilot 登入，再由 Agent 換成物流 Adapter 的 token
 POST http://localhost:8080/realms/demo/protocol/openid-connect/token
 Content-Type: application/x-www-form-urlencoded
 
 grant_type=password&client_id=copilot-web&username=alice&password=alice
 
-> {% client.global.set("token", response.body.access_token); %}
+> {% client.global.set("aliceCopilot", response.body.access_token); %}
 
-### 2. alice 的工單列表（只會看到指派給她的 T-1001、T-1003）
-GET http://localhost:8083/api/tickets
-Authorization: Bearer {{token}}
+###
+POST http://localhost:8080/realms/demo/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
 
-### 3. 訂單 O-2001
-GET http://localhost:8081/api/orders/O-2001
-Authorization: Bearer {{token}}
-
-### 4. 貨件 S-3001（延誤中）
-GET http://localhost:8082/api/shipments/S-3001
-Authorization: Bearer {{token}}
-
-### 5. 越權：bob 的工單 → 403
-GET http://localhost:8083/api/tickets/T-1002
-Authorization: Bearer {{token}}
-
-### 6. 改寄到公司（寫入動作，之後要走人工審核）
-POST http://localhost:8082/api/shipments/S-3001/redirect
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{ "newAddress": "台北市信義區松仁路 100 號 12 樓", "reason": "客人下週出差，改寄公司" }
-
-### 7. 補償運費 60 元（alice 上限 100）
-POST http://localhost:8083/api/tickets/T-1001/compensations
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{ "type": "SHIPPING_FEE_REFUND", "amount": 60, "reason": "物流延誤，補償改寄運費" }
+grant_type=urn:ietf:params:oauth:grant-type:token-exchange&client_id=copilot-agent&client_secret=copilot-agent-secret&subject_token={{aliceCopilot}}&subject_token_type=urn:ietf:params:oauth:token-type:access_token&requested_token_type=urn:ietf:params:oauth:token-type:access_token&audience=mcp-adapter-logistics

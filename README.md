@@ -69,7 +69,7 @@ docs/             情境、ADR
 cd infra
 docker compose up -d --build        # 第一次會下載 Maven 依賴，約 3–5 分鐘
 cd ..
-./scripts/smoke-test.sh             # 預期 11 項全部 PASS
+./scripts/smoke-test.sh             # 預期 29 項全部 PASS（重跑前先重啟三個舊系統，還原記憶體中的假資料）
 ```
 
 Windows 可用 Git Bash 執行腳本，或用 IDE 開 `scripts/requests.http`。
@@ -81,19 +81,34 @@ Windows 可用 Git Bash 執行腳本，或用 IDE 開 `scripts/requests.http`。
 | 物流系統 Swagger | http://localhost:8082/swagger-ui.html |
 | 客服工單系統 Swagger | http://localhost:8083/swagger-ui.html |
 
+### Token 從哪裡來
+
+每個舊系統只接受**發給自己的 token**（`aud`，ADR-0007），所以要從對應的前端 client 登入：
+
+| Client | 用途 | token 的 audience |
+|---|---|---|
+| `order-web`／`logistics-web`／`ticket-web` | 舊系統原本的 Vue 前端 | 各自的舊系統 |
+| `copilot-web` | Copilot | `copilot-agent`（不能直接打舊系統） |
+| `copilot-agent` | Agent，token exchange 換成 Adapter 的 token | `mcp-adapter-*` |
+| `mcp-adapter-*` | Adapter，token exchange 換成舊系統的 token | 只能換自己那個舊系統 |
+
+`./scripts/token.sh <帳號> <client>` 取得 token，`./scripts/exchange.sh` 做 token exchange。
+
 ### 測試帳號（密碼同帳號）
 
 | 帳號 | 角色 | 權限重點 |
 |---|---|---|
 | alice | cs_agent | 只能處理自己的工單（T-1001、T-1003）；補償上限 100 元 |
 | bob | cs_agent | 只能處理自己的工單（T-1002）；補償上限 100 元 |
-| carol | cs_supervisor | 可看全部工單；補償上限 500 元 |
+| carol | cs_supervisor | 可看全部工單；補償上限 500 元；簽核補償申請 |
+| wang | logistics_staff | 在物流系統執行或退回改寄申請 |
 | dave | sre | 看不到客服資料（預留給 AIOps） |
 
 ## Roadmap
 
 - [x] **M0** 舊系統 + SSO：三個假系統、Keycloak、JWT 權限規則、smoke test
-- [ ] **M0.5** 舊系統改為申請單流程（改寄申請、補償簽核）+ 舊系統 Vue 前端（審核頁、待簽核頁）（ADR-0003）
+- [x] **M0.5a** 舊系統後端改為申請單流程（改寄申請、補償簽核）、驗證 `aud`、Keycloak token exchange 設定（ADR-0003、0007）
+- [ ] **M0.5b** 舊系統 Vue 前端：物流改寄審核頁、工單補償待簽核頁
 - [ ] **M1** Adapter spike：MCP tool 帶 JWT 呼叫舊系統（用 MCP Inspector 驗證）
 - [ ] **M2** Adapter 改為 `tools.yaml` 驅動：多步驟組合、JSONPath 裁切、稽核 log
 - [ ] **M3** Agent：LangGraph 跨系統查詢 + `interrupt()` 人工確認

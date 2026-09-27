@@ -13,6 +13,8 @@ spring:
           # issuer-uri 只用來驗證 iss claim；有設 jwk-set-uri 時不會做 discovery
           issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8080/realms/demo}
           jwk-set-uri: ${OIDC_JWK_SET_URI:http://localhost:8080/realms/demo/protocol/openid-connect/certs}
+          # 只接受發給自己的 token（ADR-0007）。這是舊系統唯一的改動：設定，不是程式
+          audiences: ${OIDC_AUDIENCE:order-service}
 
 management:
   endpoints:
