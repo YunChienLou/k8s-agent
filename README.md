@@ -31,6 +31,8 @@
 
 - **Adapter pod**：同一個 image，每個舊系統配一份 `tools.yaml`（ConfigMap）。組合多支 API、裁切欄位、標註風險等級
 - **Agent**：Python + LangGraph，透過 `langchain-mcp-adapters` 呼叫 adapter
+- **LLM 可切換**：demo 用雲端 API，正式環境一律地端（vLLM／Ollama），只改環境變數；embedding 從 demo 起即地端
+- **RAG 對齊規章**：寫入類建議必先查規章並附引用出處，引用由程式驗證（ADR-0004）
 - **確認 ≠ 授權**：使用者確認的是意圖；能不能執行由舊系統判斷。Adapter 另外檢查「使用者確實確認過」，就算 Agent 被繞過也無法提單
 
 設計決策見 [docs/adr/](docs/adr/)。
@@ -83,6 +85,7 @@ Windows 可用 Git Bash 執行腳本，或用 IDE 開 `scripts/requests.http`。
 - [ ] **M1** Adapter spike：MCP tool 帶 JWT 呼叫舊系統（用 MCP Inspector 驗證）
 - [ ] **M2** Adapter 改為 `tools.yaml` 驅動：多步驟組合、JSONPath 裁切、稽核 log
 - [ ] **M3** Agent：LangGraph 跨系統查詢 + `interrupt()` 人工確認
+- [ ] **M3.5** 規章 RAG：補償辦法／客服 SOP 知識庫、強制查詢節點、引用驗證
 - [ ] **M4** Copilot UI：步驟追蹤 + 可編輯的行動卡片
 - [ ] **M5** 收尾：情境篩選 tool、固定測試案例、demo GIF
 - [ ] **M6** AIOps：告警觸發 Agent 調查物流服務異常並建議 rollback（k3d）
