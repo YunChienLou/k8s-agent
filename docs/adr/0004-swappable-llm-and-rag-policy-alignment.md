@@ -19,6 +19,10 @@
 - 以 LangChain `init_chat_model` 讀取設定；程式中**不得直接使用任何廠商專屬 SDK**
 - 地端推論使用 vLLM（正式、K8s GPU 節點）或 Ollama（開發機），兩者皆提供 OpenAI 相容 endpoint
 - 切換雲端／地端 = **只改環境變數，不改程式**
+- 雲端供應商以 `init_chat_model` 的 provider 前綴指定（`google_genai:`、`anthropic:`；地端 vLLM 用 `openai:` + `LLM_BASE_URL`）
+- **開發期先採用 Gemini**（免費額度，降低反覆測試成本）；錄製 demo 與跑評測時再加測 Claude，擇優作為主力
+  - 免費方案的資料可能被用於改進模型：只可使用 demo 假資料，不得放入任何真實公司資料
+  - API key 只放在 `.env`（已列入 `.gitignore`）
 
 ### 2. Embedding 從 demo 起即採地端模型
 
