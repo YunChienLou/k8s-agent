@@ -61,9 +61,20 @@ scripts/          取 token、smoke test、.http 範例
 docs/             情境、ADR
 ```
 
+## 技術版本
+
+| 範圍 | 版本 |
+|---|---|
+| Java 後端（舊系統、profile API、Adapter） | **Java 21**、**Spring Boot 4.1.1**、springdoc-openapi 3.1.1 |
+| 前端（舊系統 Vue、Copilot） | **Node 22**（`.nvmrc`）、**Vue 3**、**Vite 8** |
+| Agent | Python（uv）、LangGraph |
+| SSO | Keycloak 26 |
+
+Spring Boot 4 的 starter 名稱與 3.x 不同：`spring-boot-starter-webmvc`、`spring-boot-starter-security-oauth2-resource-server`。
+
 ## 快速開始
 
-需求：Docker Desktop。（本機開發另需 JDK 21、Maven 3.9）
+需求：Docker Desktop。（本機開發另需 JDK 21、Maven 3.9；前端需 Node 22.12 以上，Vite 8 的最低需求）
 
 ```bash
 cd infra
