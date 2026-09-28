@@ -148,7 +148,7 @@ docker run --rm -v ${PWD}:/src -v maven-repo:/root/.m2 -w /src maven:3.9-eclipse
 - [x] **M0** 舊系統 + SSO：三個假系統、Keycloak、JWT 權限規則、smoke test
 - [x] **M0.5a** 舊系統後端改為申請單流程（改寄申請、補償簽核）、權限改由公司 profile API 判斷（ADR-0003、0009）
 - [x] **M0.5b** 舊系統 Vue 前端（Vue 3、Vite 8）：物流改寄審核頁、工單補償待簽核頁、`demo-submit.sh`
-- [ ] **M1** Adapter spike：MCP tool 帶 JWT 呼叫舊系統（用 MCP Inspector 驗證）
+- [x] **M1** Adapter spike：MCP tool 帶 JWT 呼叫舊系統（Spring AI MCP server + token relay；以 curl／MCP Inspector 驗證，ADR-0010）
 - [ ] **M2** Adapter 改為 `tools.yaml` 驅動：多步驟組合、JSONPath 裁切、稽核 log
 - [ ] **M3** Agent：LangGraph 跨系統查詢 + `interrupt()` 人工確認
 - [ ] **M3.5** 規章 RAG：補償辦法／客服 SOP 知識庫、強制查詢節點、引用驗證
@@ -162,4 +162,5 @@ docker run --rm -v ${PWD}:/src -v maven-repo:/root/.m2 -w /src maven:3.9-eclipse
 - **舊系統沒有 OpenAPI spec**：本 demo 用 springdoc 自動產生；真實情況常需手寫
 - **SSO token 外洩的影響範圍**：預設 passthrough，token 在效期內可呼叫所有系統；以「只在記憶體傳遞、NetworkPolicy、短效期」降低風險。要求更高的環境可改用逐段 token exchange（ADR-0007、0009）
 - **跨系統無法原子化**：多個舊系統各自審核，可能部分完成；以 Saga（依序提單、人工決定補償、逾時提醒）處理，無法憑空創造原子性（ADR-0006）
+- **MCP 協定版本過渡**：Java SDK 2.0 尚未支援 2026-07-28（`server/discover`），adapter 暫走 `initialize` 握手，client 需用 Auto 模式；只講新版協定的外部 client 須等 SDK 2.2（ADR-0010）
 - **確認延遲與 token 過期**：確認可能等上數小時，確認時必須使用當下有效的 token 提單

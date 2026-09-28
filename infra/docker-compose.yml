@@ -65,8 +65,19 @@ services:
       - "5176:80"
     depends_on: [ticket-service, profile-service]
 
+  # ── Adapter（MCP server）：M1 先接訂單系統 ───────────────
+  adapter-order:
+    build: ../adapter
+    environment:
+      OIDC_ISSUER_URI: http://localhost:8080/realms/demo
+      OIDC_JWK_SET_URI: http://keycloak:8080/realms/demo/protocol/openid-connect/certs
+      ORDER_BASE_URL: http://order-service:8081
+    ports:
+      - "8090:8090"
+    depends_on: [keycloak, order-service]
+
   # ── 之後的里程碑會加入 ───────────────────────────────────
-  # adapter-order / adapter-logistics / adapter-ticket  (M1：同一個 image + 不同 tools.yaml)
+  # adapter-logistics / adapter-ticket  (M2：同一個 image + 不同 tools.yaml)
   # agent        (M3：FastAPI + LangGraph)
   # postgres     (M2：稽核 log、待審核請求、run trace)
   # web          (M4：Vue3 Copilot)

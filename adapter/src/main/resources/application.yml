@@ -1,0 +1,38 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: adapter
+  threads:
+    virtual:
+      enabled: true           # 每個 tool 呼叫都在等舊系統回應，適合 virtual threads
+  ai:
+    mcp:
+      server:
+        name: legacy-adapter
+        version: 0.1.0
+        type: SYNC
+        protocol: STATELESS   # 不保存 session，K8s 可任意水平擴展；端點為 POST /mcp
+        capabilities:
+          resource: false
+          prompt: false
+          completion: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # 與舊系統相同：issuer-uri 只驗 iss claim，公鑰由 jwk-set-uri 取得
+          issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8080/realms/demo}
+          jwk-set-uri: ${OIDC_JWK_SET_URI:http://localhost:8080/realms/demo/protocol/openid-connect/certs}
+
+# 本 adapter 對接的舊系統（M1 先寫死訂單系統；M2 改由 tools.yaml 設定）
+legacy:
+  order:
+    base-url: ${ORDER_BASE_URL:http://localhost:8081}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
