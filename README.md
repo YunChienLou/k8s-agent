@@ -80,7 +80,7 @@ Spring Boot 4 的 starter 名稱與 3.x 不同：`spring-boot-starter-webmvc`、
 cd infra
 docker compose up -d --build        # 第一次會下載 Maven 依賴，約 3–5 分鐘
 cd ..
-./scripts/smoke-test.sh             # 預期 28 項全部 PASS（重跑前先重啟三個舊系統，還原記憶體中的假資料）
+./scripts/smoke-test.sh             # 端對端：只測需要真正 Keycloak 的部分（6 項）
 ```
 
 Windows 可用 Git Bash 執行腳本，或用 IDE 開 `scripts/requests.http`。
@@ -126,6 +126,22 @@ Copilot 完成前，先用腳本模擬「alice 在 Copilot 按下確認」：
 | carol | cs_supervisor | 可看全部工單；補償上限 500 元；簽核補償申請 |
 | wang | logistics_staff（僅物流） | 在物流系統執行或退回改寄申請 |
 | dave | sre（僅維運） | 在三個客服相關系統都沒有角色（預留給 AIOps） |
+
+## 測試
+
+| 層級 | 內容 | 怎麼跑 |
+|---|---|---|
+| **單元／整合測試（JUnit）** | 各服務的業務規則：權限、補償上限與簽核、改寄申請流程、冪等、經由 Copilot 的紀錄、profile API fail closed | 各服務目錄下 `mvn test`，或根目錄 `mvn test` 一次跑完 |
+| **端對端 smoke test** | 需要真正 Keycloak 的部分：token 簽發、同一張 SSO token 跨系統、真實 token 的 `azp` | `docker compose up` 後執行 `./scripts/smoke-test.sh` |
+| **CI** | GitHub Actions：4 個後端服務 `mvn test`、2 個前端 typecheck + build | push／PR 自動執行（`.github/workflows/test.yml`） |
+
+JUnit 測試以 mock 取代 SSO（`JwtDecoder`）與 profile API（`ProfileClient`），請求仍經過真正的 Spring Security 過濾器與角色轉換，**不需要 Docker 或 Keycloak**。
+
+本機沒有 Maven 時，可以用 Docker 跑（PowerShell，在專案根目錄）：
+
+```powershell
+docker run --rm -v ${PWD}:/src -v maven-repo:/root/.m2 -w /src maven:3.9-eclipse-temurin-21 mvn -B test
+```
 
 ## Roadmap
 
