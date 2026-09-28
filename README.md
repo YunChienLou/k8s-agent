@@ -53,7 +53,7 @@
 
 ```
 infra/            docker-compose、Keycloak realm（模擬公司 SSO）
-legacy/           三個「舊系統」：訂單、物流、客服工單（純 Spring Boot，不含任何 AI 套件）
+legacy/           「舊系統」：訂單、物流、工單、profile API（Spring Boot）與物流、工單的 Vue 前端，皆不含任何 AI 套件
 adapter/          Java adapter pod（M1）
 agent/            Python Agent（M3）
 web/              Vue3 Copilot（M4）
@@ -91,6 +91,21 @@ Windows 可用 Git Bash 執行腳本，或用 IDE 開 `scripts/requests.http`。
 | 訂單系統 Swagger | http://localhost:8081/swagger-ui.html |
 | 物流系統 Swagger | http://localhost:8082/swagger-ui.html |
 | 客服工單系統 Swagger | http://localhost:8083/swagger-ui.html |
+| **物流系統前端（舊）**：改寄申請審核 | http://localhost:5175（用 `wang` 登入） |
+| **工單系統前端（舊）**：補償簽核 | http://localhost:5176（用 `carol` 登入） |
+
+### Demo：切到舊系統畫面看申請單出現
+
+Copilot 完成前，先用腳本模擬「alice 在 Copilot 按下確認」：
+
+1. 瀏覽器開 http://localhost:5175，用 `wang`／`wang` 登入物流系統
+2. 執行 `./scripts/demo-submit.sh redirect`
+3. 約 5 秒內，畫面出現一筆**新的**改寄申請，來源管道標示 **AI Copilot**、經由 `copilot-web`
+4. 按「執行」後，貨件地址才真正變更；按「退回」需填寫原因
+
+補償簽核同理：http://localhost:5176 用 `carol` 登入，執行 `./scripts/demo-submit.sh comp`。
+
+前端透過 nginx（開發時為 Vite proxy）反向代理 `/api`，與後端同源，**舊系統後端不需要開 CORS**。
 
 ### 權限怎麼判斷
 
@@ -116,7 +131,7 @@ Windows 可用 Git Bash 執行腳本，或用 IDE 開 `scripts/requests.http`。
 
 - [x] **M0** 舊系統 + SSO：三個假系統、Keycloak、JWT 權限規則、smoke test
 - [x] **M0.5a** 舊系統後端改為申請單流程（改寄申請、補償簽核）、權限改由公司 profile API 判斷（ADR-0003、0009）
-- [ ] **M0.5b** 舊系統 Vue 前端：物流改寄審核頁、工單補償待簽核頁
+- [x] **M0.5b** 舊系統 Vue 前端（Vue 3、Vite 8）：物流改寄審核頁、工單補償待簽核頁、`demo-submit.sh`
 - [ ] **M1** Adapter spike：MCP tool 帶 JWT 呼叫舊系統（用 MCP Inspector 驗證）
 - [ ] **M2** Adapter 改為 `tools.yaml` 驅動：多步驟組合、JSONPath 裁切、稽核 log
 - [ ] **M3** Agent：LangGraph 跨系統查詢 + `interrupt()` 人工確認

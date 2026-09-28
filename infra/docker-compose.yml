@@ -52,6 +52,19 @@ services:
       - "8083:8083"
     depends_on: [keycloak, profile-service]
 
+  # ── 舊系統原本的 Vue 前端：nginx 反向代理 /api，與後端同源 ──
+  logistics-web:
+    build: ../legacy/logistics-web
+    ports:
+      - "5175:80"
+    depends_on: [logistics-service, profile-service]
+
+  ticket-web:
+    build: ../legacy/ticket-web
+    ports:
+      - "5176:80"
+    depends_on: [ticket-service, profile-service]
+
   # ── 之後的里程碑會加入 ───────────────────────────────────
   # adapter-order / adapter-logistics / adapter-ticket  (M1：同一個 image + 不同 tools.yaml)
   # agent        (M3：FastAPI + LangGraph)

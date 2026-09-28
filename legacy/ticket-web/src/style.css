@@ -1,0 +1,74 @@
+/* 刻意做成「傳統企業後台」的樣子：深色側欄、灰色標題列、有框線的表格 */
+:root {
+  --side: #2f4050;
+  --side-ink: #a7b1c2;
+  --side-active: #1ab394;
+  --bg: #f3f3f4;
+  --panel: #ffffff;
+  --line: #e7eaec;
+  --ink: #333333;
+  --muted: #888888;
+  --primary: #1c84c6;
+  --success: #1ab394;
+  --danger: #ed5565;
+  --warning: #f8ac59;
+  --ai: #6f42c1;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", Arial, sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--bg);
+}
+#app { min-height: 100%; }
+.layout { display: flex; min-height: 100vh; }
+.side { width: 200px; flex-shrink: 0; background: var(--side); color: var(--side-ink); }
+.side .brand { padding: 16px; color: #fff; font-size: 15px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,.08); }
+.side .brand small { display: block; color: var(--side-ink); font-weight: normal; font-size: 11px; margin-top: 2px; }
+.side a { display: block; padding: 10px 16px; color: var(--side-ink); text-decoration: none; border-left: 3px solid transparent; }
+.side a.active { color: #fff; background: #293846; border-left-color: var(--side-active); }
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.topbar { background: var(--panel); border-bottom: 1px solid var(--line); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.topbar .who { color: var(--muted); }
+.topbar .who b { color: var(--ink); }
+.content { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+.panel { background: var(--panel); border: 1px solid var(--line); }
+.panel-h { padding: 10px 14px; border-bottom: 1px solid var(--line); font-weight: bold; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.panel-b { padding: 12px 14px; }
+.tabs { display: flex; gap: 4px; }
+.tabs button { border: 1px solid var(--line); background: #fafafa; padding: 4px 12px; cursor: pointer; font: inherit; }
+.tabs button.on { background: var(--primary); color: #fff; border-color: var(--primary); }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 860px; }
+th, td { border: 1px solid var(--line); padding: 7px 8px; text-align: left; vertical-align: top; }
+th { background: #f5f5f6; white-space: nowrap; font-weight: bold; }
+td.nowrap { white-space: nowrap; }
+tr.new td { background: #fff8e6; }
+.btn { font: inherit; padding: 3px 10px; border: 1px solid transparent; border-radius: 3px; cursor: pointer; color: #fff; margin: 0 4px 4px 0; }
+.btn.primary { background: var(--primary); }
+.btn.success { background: var(--success); }
+.btn.danger { background: var(--danger); }
+.btn.plain { background: #fff; color: var(--ink); border-color: #d2d2d2; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.label { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 12px; color: #fff; white-space: nowrap; }
+.label.PENDING, .label.PENDING_APPROVAL { background: var(--warning); }
+.label.EXECUTED, .label.APPROVED { background: var(--success); }
+.label.REJECTED { background: var(--danger); }
+.label.ai { background: var(--ai); }
+.label.gray { background: #b5b8bb; }
+.muted { color: var(--muted); font-size: 12px; }
+.alert { padding: 8px 12px; border: 1px solid; }
+.alert.info { background: #eef7fd; border-color: #bcdff1; color: #31708f; }
+.alert.error { background: #fdecee; border-color: #f5c6cb; color: #a94442; }
+.alert.new { background: #fff8e6; border-color: #f5d9a8; color: #8a5a00; }
+.inline-form { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.inline-form input { font: inherit; padding: 3px 6px; border: 1px solid #ccc; min-width: 180px; }
+.err { color: var(--danger); font-size: 12px; margin-top: 4px; }
+@media (max-width: 720px) {
+  .layout { flex-direction: column; }
+  .side { width: auto; }
+  .content { padding: 12px; }
+}

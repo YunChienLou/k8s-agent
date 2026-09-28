@@ -1,0 +1,26 @@
+{
+  "name": "logistics-web",
+  "private": true,
+  "version": "0.1.0",
+  "description": "物流系統前端（舊系統，不含任何 AI 套件）",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "vue-tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "keycloak-js": "^26.2.4",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.9",
+    "typescript": "~5.9.0",
+    "vite": "^8.3.1",
+    "vue-tsc": "^3.3.11"
+  }
+}
