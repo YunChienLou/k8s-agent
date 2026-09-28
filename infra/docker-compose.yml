@@ -1,4 +1,4 @@
-name: legacy-ai-bridge
+name: k8s-agent
 
 x-legacy-env: &legacy-env
   # token 由瀏覽器／curl 經 localhost:8080 取得，所以 iss 是 localhost；

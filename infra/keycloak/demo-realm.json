@@ -1,7 +1,7 @@
 {
   "realm": "demo",
   "enabled": true,
-  "displayName": "Legacy AI Bridge Demo (模擬公司 SSO)",
+  "displayName": "k8s-agent Demo (模擬公司 SSO)",
   "accessTokenLifespan": 900,
   "sslRequired": "none",
   "clients": [

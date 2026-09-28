@@ -1,4 +1,4 @@
-# legacy-ai-bridge
+# k8s-agent
 
 > 讓傳統企業系統**一行程式都不用改**，就能被 AI Agent 安全地使用。
 
