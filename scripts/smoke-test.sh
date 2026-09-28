@@ -20,8 +20,13 @@ call() {
   local method="$1" url="$2" token="$3" data="${4:-}" out
   local args=(-s -X "$method" -w $'\n%{http_code}')
   [[ "$token" != "-" ]] && args+=(-H "Authorization: Bearer $token")
-  [[ -n "$data" ]] && args+=(-H 'Content-Type: application/json' -d "$data")
-  out=$(curl "${args[@]}" "$url")
+  if [[ -n "$data" ]]; then
+    # 經 stdin 送出 UTF-8 位元組：Windows 上把中文當命令列參數傳給 curl 會被轉碼
+    args+=(-H 'Content-Type: application/json; charset=utf-8' --data-binary @-)
+    out=$(printf '%s' "$data" | curl "${args[@]}" "$url")
+  else
+    out=$(curl "${args[@]}" "$url")
+  fi
   CODE="${out##*$'\n'}"
   BODY="${out%$'\n'*}"
 }
@@ -63,6 +68,7 @@ call POST "$TICKET/api/tickets/T-1001/compensations" "$ALICE_TICKET" \
   '{"type":"COUPON","amount":150,"reason":"客人很生氣","channel":"AI_COPILOT"}'
 expect "alice 補償 150 元 → 待主管簽核" 202 '"outcome":"PENDING_APPROVAL"'
 CR_ID=$(printf '%s' "$BODY" | sed -nE 's/.*"id":"(CR-[0-9]+)".*/\1/p')
+[[ -z "$CR_ID" ]] && { bad "取不到補償申請單號，略過簽核測試"; CR_ID="CR-missing"; }
 call POST "$TICKET/api/compensation-requests/$CR_ID/approve" "$ALICE_TICKET"; expect "alice 不能核准 → 403" 403
 call POST "$TICKET/api/compensation-requests/$CR_ID/approve" "$CAROL_TICKET"; expect "carol 核准 $CR_ID" 200 '"status":"APPROVED"'
 call POST "$TICKET/api/compensation-requests/$CR_ID/approve" "$CAROL_TICKET"; expect "重複核准 → 409" 409
@@ -78,7 +84,8 @@ echo "[改寄：申請單 → 物流人員執行]"
 call POST "$LOGISTICS/api/redirect-requests" "$ALICE_LOGI" \
   '{"shipmentId":"S-3001","newAddress":"台北市信義區松仁路 100 號 12 樓","reason":"客人下週出差"}'
 expect "alice 建立改寄申請" 201 '"status":"PENDING"'
-RR_ID=$(printf '%s' "$BODY" | sed -nE 's/^\{"id":"(RR-[0-9]+)".*/\1/p')
+RR_ID=$(printf '%s' "$BODY" | sed -nE 's/.*"id":"(RR-[0-9]+)".*/\1/p')
+[[ -z "$RR_ID" ]] && { bad "取不到改寄申請單號，後續執行測試會失敗"; RR_ID="RR-missing"; }
 call GET "$LOGISTICS/api/shipments/S-3001" "$ALICE_LOGI";      expect "執行前地址未變更" 200 "文化路"
 call POST "$LOGISTICS/api/redirect-requests" "$ALICE_LOGI" \
   '{"shipmentId":"S-3001","newAddress":"另一個地址 1 號","reason":"重複"}'

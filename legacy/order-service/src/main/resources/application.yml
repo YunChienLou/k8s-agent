@@ -2,8 +2,13 @@ server:
   port: 8081
   error:
     include-message: always   # 讓 403/404 的原因回傳給呼叫端（之後 Agent 需要據此解釋）
+    include-binding-errors: always
 
 spring:
+  web:
+    error:                    # Spring Boot 4 的設定位置；與 server.error 並存，未使用的會被忽略
+      include-message: always
+      include-binding-errors: always
   application:
     name: order-service
   security:
