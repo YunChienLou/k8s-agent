@@ -24,12 +24,33 @@
 ## 架構
 
 ```
- Vue3 Copilot ──► Agent (FastAPI + LangGraph) ──MCP──► Adapter pods (Java) ──REST──► 舊系統
-      │                  │  interrupt() 人工確認          │  tools.yaml 定義任務型 tool      │
-      └──── 公司 SSO（Keycloak）token 一路傳遞，權限由 profile API 判斷 ───┴────────────────┘
+                         Keycloak (SSO)          profile API
+                              │ token                 ▲
+                              ▼                       │ roles?system=xxx
+  Vue3 Copilot ──► Agent (FastAPI + LangGraph)        │
+                     │  interrupt()                   │
+                     │ MCP (one endpoint per domain)  │
+        ┌────────────┴─────────────┐                  │
+        ▼                          ▼                  │
+┌─ ns: domain-cs ──────────────┐ ┌─ ns: domain-finance (sample) ─┐
+│ Deployment: adapter-cs  x2   │ │ Deployment: adapter-fin  x2   │
+│ ┌──────────────────────────┐ │ │ ┌───────────────────────────┐ │
+│ │ ConfigMap tools/         │ │ │ │ ConfigMap tools/          │ │
+│ │  order.yaml              │ │ │ │  billing.yaml             │ │
+│ │  logistics.yaml          │ │ │ │  invoice.yaml             │ │
+│ │  ticket.yaml             │ │ │ └───────────────────────────┘ │
+│ └──────────────────────────┘ │ │ bulkhead: [billing][invoice]  │
+│ bulkhead + circuit breaker   │ └──────────────┬────────────────┘
+│  [order][logistics][ticket]  │                │
+└──────┬─────────┬─────────┬───┘                ▼
+       │ REST    │         │               billing / invoice
+       ▼         ▼         ▼
+    order    logistics   ticket  ── each legacy asks profile API
+   service    service    service
+   ◄── NetworkPolicy: adapter-cs 只能連客服域的系統 ──►
 ```
 
-- **Adapter pod**：同一個 image，每個舊系統配一份 `tools.yaml`（ConfigMap）。組合多支 API、裁切欄位、標註風險等級
+- **Adapter pod**：同一個 image，**依業務域分組部署**（K8s namespace 為邊界），讀取 `tools/` 目錄下每個舊系統一份 `tools.yaml`（ConfigMap）；各舊系統以 bulkhead／circuit breaker 隔離故障（ADR-0011）。組合多支 API、裁切欄位、標註風險等級
 - **Agent**：Python + LangGraph，透過 `langchain-mcp-adapters` 呼叫 adapter
 - **LLM 可切換**：開發與 demo 用雲端 API，正式環境一律地端（vLLM），只改環境變數；embedding 從 demo 起即地端；地端模型須通過評測集才能上線
 - **RAG 對齊規章**：寫入類建議必先查規章並附引用出處，引用由程式驗證（ADR-0004）；規章從既有知識庫同步，發布即生效、可回滾（ADR-0005）
@@ -149,7 +170,7 @@ docker run --rm -v ${PWD}:/src -v maven-repo:/root/.m2 -w /src maven:3.9-eclipse
 - [x] **M0.5a** 舊系統後端改為申請單流程（改寄申請、補償簽核）、權限改由公司 profile API 判斷（ADR-0003、0009）
 - [x] **M0.5b** 舊系統 Vue 前端（Vue 3、Vite 8）：物流改寄審核頁、工單補償待簽核頁、`demo-submit.sh`
 - [x] **M1** Adapter spike：MCP tool 帶 JWT 呼叫舊系統（Spring AI MCP server + token relay；以 curl／MCP Inspector 驗證，ADR-0010）
-- [ ] **M2** Adapter 改為 `tools.yaml` 驅動：多步驟組合、JSONPath 裁切、稽核 log
+- [ ] **M2** Adapter 改為 `tools.yaml` 驅動：讀取 `tools/` 目錄多份 yaml、依業務域部署 `adapter-cs`、每系統 bulkhead／circuit breaker、多步驟組合、JSONPath 裁切、稽核 log（ADR-0011）
 - [ ] **M3** Agent：LangGraph 跨系統查詢 + `interrupt()` 人工確認
 - [ ] **M3.5** 規章 RAG：補償辦法／客服 SOP 知識庫、強制查詢節點、引用驗證
 - [ ] **M4** Copilot UI：步驟追蹤 + 可編輯的行動卡片

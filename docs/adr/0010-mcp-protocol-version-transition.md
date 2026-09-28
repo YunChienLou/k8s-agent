@@ -45,7 +45,7 @@
 
 ## 驗證方式
 
-- 整合測試分別以 `initialize` 與 `server/discover` 呼叫 `POST /mcp`
+- 整合測試（`adapter/src/test/.../McpAdapterTest`）分別以 `initialize` 與 `server/discover` 呼叫 `POST /mcp`
   - **現行預期**：`initialize` 成功；`server/discover` 回 -32601
   - **升級後預期**：兩者皆成功
 - 升級是否完成由 CI 判斷，不靠人工確認
