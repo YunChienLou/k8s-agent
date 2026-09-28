@@ -14,5 +14,6 @@
         <module>legacy/logistics-service</module>
         <module>legacy/ticket-service</module>
         <module>legacy/profile-service</module>
+        <module>adapter</module>
     </modules>
 </project>
