@@ -128,7 +128,7 @@ class RedirectRequestFlowTest {
     @Test
     @DisplayName("經由 Copilot 開單：申請人仍是 alice，並記錄 azp=copilot-web")
     void viaCopilotRecordsClient() {
-        MvcTestResult r = post("/api/redirect-requests", "alice@copilot-web",
+        MvcTestResult r = post("/api/redirect-requests", "alice~copilot-web",
             "{\"shipmentId\":\"S-3001\",\"newAddress\":\"" + NEW_ADDRESS + "\",\"channel\":\"AI_COPILOT\"}");
         assertThat(r).hasStatus(201);
         assertThat(r).bodyJson().extractingPath("$.requestedBy").isEqualTo("alice");

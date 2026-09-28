@@ -122,7 +122,7 @@ class TicketAndCompensationTest {
     @Test
     @DisplayName("經由 Copilot 送出：申請人仍是 alice，並記錄 azp=copilot-web")
     void viaCopilotRecordsClient() {
-        MvcTestResult r = post("/api/tickets/T-1001/compensations", "alice@copilot-web",
+        MvcTestResult r = post("/api/tickets/T-1001/compensations", "alice~copilot-web",
             "{\"type\":\"COUPON\",\"amount\":150,\"reason\":\"客人很生氣\",\"channel\":\"AI_COPILOT\"}");
         assertThat(r).hasStatus(202);
         assertThat(r).bodyJson().extractingPath("$.request.requestedBy").isEqualTo("alice");

@@ -10,7 +10,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 /**
  * 測試用的「SSO」與「profile API」替身。
  * <p>
- * Bearer token 直接寫成「使用者@client」，例如 {@code alice@copilot-web}；沒有 @ 時 client 為 {@link #DEFAULT_CLIENT}。
+ * Bearer token 直接寫成「使用者~client」（@ 不是 RFC 6750 允許的 token 字元），例如 {@code alice~copilot-web}；沒有 ~ 時 client 為 {@link #DEFAULT_CLIENT}。
  * token 為 {@code bad} 時模擬簽章錯誤。請求仍會經過真正的 Spring Security 過濾器與角色轉換。
  */
 final class TestAuth {
@@ -28,7 +28,7 @@ final class TestAuth {
         if ("bad".equals(token)) {
             throw new BadJwtException("簽章錯誤");
         }
-        String[] parts = token.split("@", 2);
+        String[] parts = token.split("~", 2);
         String user = parts[0];
         String client = parts.length > 1 ? parts[1] : DEFAULT_CLIENT;
         Instant now = Instant.now();

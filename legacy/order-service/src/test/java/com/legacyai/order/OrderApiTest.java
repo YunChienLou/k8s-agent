@@ -70,8 +70,8 @@ class OrderApiTest {
     @Test
     @DisplayName("經由 Copilot 的 token 一樣可以查詢，權限仍由 profile API 決定")
     void viaCopilot() {
-        assertThat(get("/api/orders/O-2001", "alice@copilot-web")).hasStatus(200);
-        assertThat(get("/api/orders/O-2001", "dave@copilot-web")).hasStatus(403);
+        assertThat(get("/api/orders/O-2001", "alice~copilot-web")).hasStatus(200);
+        assertThat(get("/api/orders/O-2001", "dave~copilot-web")).hasStatus(403);
     }
 
     private MvcTestResult get(String url, String token) {
