@@ -1,6 +1,6 @@
 # ADR-0002：使用者 JWT 一路傳遞（passthrough），不使用 service account
 
-- 狀態：**已被 [ADR-0007](0007-per-hop-token-exchange.md) 取代**（保留「繼承使用者權限」的目的，傳遞方式改為逐段 token exchange）
+- 狀態：**已被 [ADR-0009](0009-sso-passthrough-with-profile-api.md) 取代**（passthrough 做法保留；權限改由公司 profile API 判斷，並補上補償措施）
 - 日期：2026-09-28
 
 ## 背景

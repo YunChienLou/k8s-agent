@@ -5,6 +5,7 @@ x-legacy-env: &legacy-env
   # 容器內則透過 keycloak:8080 抓公鑰驗簽。
   OIDC_ISSUER_URI: http://localhost:8080/realms/demo
   OIDC_JWK_SET_URI: http://keycloak:8080/realms/demo/protocol/openid-connect/certs
+  PROFILE_BASE_URL: http://profile-service:8084
 
 services:
   # ── 模擬公司 SSO ─────────────────────────────────────────
@@ -21,27 +22,35 @@ services:
     volumes:
       - ./keycloak:/opt/keycloak/data/import:ro
 
+  # ── 公司 profile API：各系統用 SSO token 查「這個人在本系統的角色」 ──
+  profile-service:
+    build: ../legacy/profile-service
+    environment: *legacy-env
+    ports:
+      - "8084:8084"
+    depends_on: [keycloak]
+
   # ── 三個「舊系統」：完全不含 AI 套件 ─────────────────────
   order-service:
     build: ../legacy/order-service
     environment: *legacy-env
     ports:
       - "8081:8081"
-    depends_on: [keycloak]
+    depends_on: [keycloak, profile-service]
 
   logistics-service:
     build: ../legacy/logistics-service
     environment: *legacy-env
     ports:
       - "8082:8082"
-    depends_on: [keycloak]
+    depends_on: [keycloak, profile-service]
 
   ticket-service:
     build: ../legacy/ticket-service
     environment: *legacy-env
     ports:
       - "8083:8083"
-    depends_on: [keycloak]
+    depends_on: [keycloak, profile-service]
 
   # ── 之後的里程碑會加入 ───────────────────────────────────
   # adapter-order / adapter-logistics / adapter-ticket  (M1：同一個 image + 不同 tools.yaml)

@@ -6,7 +6,7 @@
 這個專案示範另一條路：**在 K8s 旁邊加一個 adapter pod**，把舊系統的 API 轉成 Agent 能用的 tool，
 並且把企業最在意的三件事做好：
 
-- **權限繼承**：每一段以 token exchange 換成只給下一站用的 token，身分始終是使用者本人，舊系統原本的權限規則照樣生效（ADR-0007）
+- **權限繼承**：SSO token 一路傳到舊系統，舊系統照原本的方式用公司 profile API 判斷權限；經由 Copilot 的動作以 token 的 `azp` 記錄（ADR-0009）
 - **人確認意圖、舊系統決定**：查詢自動執行；寫入動作先由使用者在「行動卡片」確認，再到舊系統**提單**，由舊系統既有的人員與規則決定能否執行
 - **稽核追蹤**：誰、在什麼時候、透過 Agent 呼叫了什麼、依據是什麼
 
@@ -26,7 +26,7 @@
 ```
  Vue3 Copilot ──► Agent (FastAPI + LangGraph) ──MCP──► Adapter pods (Java) ──REST──► 舊系統
       │                  │  interrupt() 人工確認          │  tools.yaml 定義任務型 tool      │
-      └──── 公司 SSO（Keycloak）逐段 token exchange：每張 token 只給下一站 ─┴────────────────┘
+      └──── 公司 SSO（Keycloak）token 一路傳遞，權限由 profile API 判斷 ───┴────────────────┘
 ```
 
 - **Adapter pod**：同一個 image，每個舊系統配一份 `tools.yaml`（ConfigMap）。組合多支 API、裁切欄位、標註風險等級
@@ -43,7 +43,7 @@
 
 | 層 | 內容 | 策略 |
 |---|---|---|
-| 門禁層 | 驗證、token exchange、tool 白名單、稽核 | 依標準介面自建，可替換為現成 gateway |
+| 門禁層 | 驗證、token 傳遞、tool 白名單、稽核 | 依標準介面自建，可替換為現成 gateway |
 | Tool 定義層 | `tools.yaml` 任務型 tool | 宣告式，替換時轉格式 |
 | 辦事流程層 | 確認卡片、送進舊系統簽核、規章 RAG、Saga | 自建，本專案核心 |
 
@@ -69,7 +69,7 @@ docs/             情境、ADR
 cd infra
 docker compose up -d --build        # 第一次會下載 Maven 依賴，約 3–5 分鐘
 cd ..
-./scripts/smoke-test.sh             # 預期 29 項全部 PASS（重跑前先重啟三個舊系統，還原記憶體中的假資料）
+./scripts/smoke-test.sh             # 預期 28 項全部 PASS（重跑前先重啟三個舊系統，還原記憶體中的假資料）
 ```
 
 Windows 可用 Git Bash 執行腳本，或用 IDE 開 `scripts/requests.http`。
@@ -81,33 +81,30 @@ Windows 可用 Git Bash 執行腳本，或用 IDE 開 `scripts/requests.http`。
 | 物流系統 Swagger | http://localhost:8082/swagger-ui.html |
 | 客服工單系統 Swagger | http://localhost:8083/swagger-ui.html |
 
-### Token 從哪裡來
+### 權限怎麼判斷
 
-每個舊系統只接受**發給自己的 token**（`aud`，ADR-0007），所以要從對應的前端 client 登入：
+比照企業現況（ADR-0009）：
 
-| Client | 用途 | token 的 audience |
-|---|---|---|
-| `order-web`／`logistics-web`／`ticket-web` | 舊系統原本的 Vue 前端 | 各自的舊系統 |
-| `copilot-web` | Copilot | `copilot-agent`（不能直接打舊系統） |
-| `copilot-agent` | Agent，token exchange 換成 Adapter 的 token | `mcp-adapter-*` |
-| `mcp-adapter-*` | Adapter，token exchange 換成舊系統的 token | 只能換自己那個舊系統 |
+- **SSO（Keycloak）只負責「你是誰」**，同一張 token 在各系統之間通用
+- **profile API（port 8084）負責「你在各系統能做什麼」**，舊系統拿同一張 token 去查本系統的角色，結果快取 60 秒
+- 從哪個前端登入都可以：`order-web`／`logistics-web`／`ticket-web`（舊系統前端）或 `copilot-web`（Copilot）。token 的 `azp` 會記錄是哪一個，經由 Copilot 送出的申請單因此可以辨識
 
-`./scripts/token.sh <帳號> <client>` 取得 token，`./scripts/exchange.sh` 做 token exchange。
+`./scripts/token.sh <帳號> <client>` 取得 token。
 
 ### 測試帳號（密碼同帳號）
 
 | 帳號 | 角色 | 權限重點 |
 |---|---|---|
-| alice | cs_agent | 只能處理自己的工單（T-1001、T-1003）；補償上限 100 元 |
+| alice | cs_agent（訂單、物流、工單） | 只能處理自己的工單（T-1001、T-1003）；補償上限 100 元 |
 | bob | cs_agent | 只能處理自己的工單（T-1002）；補償上限 100 元 |
 | carol | cs_supervisor | 可看全部工單；補償上限 500 元；簽核補償申請 |
-| wang | logistics_staff | 在物流系統執行或退回改寄申請 |
-| dave | sre | 看不到客服資料（預留給 AIOps） |
+| wang | logistics_staff（僅物流） | 在物流系統執行或退回改寄申請 |
+| dave | sre（僅維運） | 在三個客服相關系統都沒有角色（預留給 AIOps） |
 
 ## Roadmap
 
 - [x] **M0** 舊系統 + SSO：三個假系統、Keycloak、JWT 權限規則、smoke test
-- [x] **M0.5a** 舊系統後端改為申請單流程（改寄申請、補償簽核）、驗證 `aud`、Keycloak token exchange 設定（ADR-0003、0007）
+- [x] **M0.5a** 舊系統後端改為申請單流程（改寄申請、補償簽核）、權限改由公司 profile API 判斷（ADR-0003、0009）
 - [ ] **M0.5b** 舊系統 Vue 前端：物流改寄審核頁、工單補償待簽核頁
 - [ ] **M1** Adapter spike：MCP tool 帶 JWT 呼叫舊系統（用 MCP Inspector 驗證）
 - [ ] **M2** Adapter 改為 `tools.yaml` 驅動：多步驟組合、JSONPath 裁切、稽核 log
@@ -121,6 +118,6 @@ Windows 可用 Git Bash 執行腳本，或用 IDE 開 `scripts/requests.http`。
 
 - **各系統自行簽發 token**：本 demo 假設公司 SSO 發的 OIDC token 各系統都認。若舊系統登入後另發自己的 session／JWT，需要 **token exchange（RFC 8693）**
 - **舊系統沒有 OpenAPI spec**：本 demo 用 springdoc 自動產生；真實情況常需手寫
-- **舊系統需驗證 `aud`**：token exchange 要完整生效，舊系統須加上 audiences 設定（設定變更，不改程式）；做不到的系統列入風險清單（ADR-0007）
+- **SSO token 外洩的影響範圍**：預設 passthrough，token 在效期內可呼叫所有系統；以「只在記憶體傳遞、NetworkPolicy、短效期」降低風險。要求更高的環境可改用逐段 token exchange（ADR-0007、0009）
 - **跨系統無法原子化**：多個舊系統各自審核，可能部分完成；以 Saga（依序提單、人工決定補償、逾時提醒）處理，無法憑空創造原子性（ADR-0006）
 - **確認延遲與 token 過期**：確認可能等上數小時，確認時必須使用當下有效的 token 提單

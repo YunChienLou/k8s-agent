@@ -4,26 +4,6 @@
   "displayName": "Legacy AI Bridge Demo (模擬公司 SSO)",
   "accessTokenLifespan": 900,
   "sslRequired": "none",
-  "roles": {
-    "realm": [
-      {
-        "name": "cs_agent",
-        "description": "客服人員：只能處理指派給自己的工單，單筆補償上限 100 元"
-      },
-      {
-        "name": "cs_supervisor",
-        "description": "客服主管：可看全部工單，單筆補償上限 500 元，簽核補償申請"
-      },
-      {
-        "name": "logistics_staff",
-        "description": "物流人員：審核並執行改寄申請"
-      },
-      {
-        "name": "sre",
-        "description": "維運人員（預留給 M6 AIOps）"
-      }
-    ]
-  },
   "clients": [
     {
       "clientId": "copilot-web",
@@ -40,21 +20,7 @@
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256"
-      },
-      "protocolMappers": [
-        {
-          "name": "aud-copilot-agent",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "consentRequired": false,
-          "config": {
-            "included.client.audience": "copilot-agent",
-            "access.token.claim": "true",
-            "id.token.claim": "false",
-            "introspection.token.claim": "true"
-          }
-        }
-      ]
+      }
     },
     {
       "clientId": "order-web",
@@ -71,21 +37,7 @@
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256"
-      },
-      "protocolMappers": [
-        {
-          "name": "aud-order-service",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "consentRequired": false,
-          "config": {
-            "included.client.audience": "order-service",
-            "access.token.claim": "true",
-            "id.token.claim": "false",
-            "introspection.token.claim": "true"
-          }
-        }
-      ]
+      }
     },
     {
       "clientId": "logistics-web",
@@ -102,21 +54,7 @@
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256"
-      },
-      "protocolMappers": [
-        {
-          "name": "aud-logistics-service",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "consentRequired": false,
-          "config": {
-            "included.client.audience": "logistics-service",
-            "access.token.claim": "true",
-            "id.token.claim": "false",
-            "introspection.token.claim": "true"
-          }
-        }
-      ]
+      }
     },
     {
       "clientId": "ticket-web",
@@ -133,193 +71,7 @@
       ],
       "attributes": {
         "pkce.code.challenge.method": "S256"
-      },
-      "protocolMappers": [
-        {
-          "name": "aud-ticket-service",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "consentRequired": false,
-          "config": {
-            "included.client.audience": "ticket-service",
-            "access.token.claim": "true",
-            "id.token.claim": "false",
-            "introspection.token.claim": "true"
-          }
-        }
-      ]
-    },
-    {
-      "clientId": "copilot-agent",
-      "name": "Copilot Agent",
-      "enabled": true,
-      "publicClient": false,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "copilot-agent-secret",
-      "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": true,
-      "attributes": {
-        "standard.token.exchange.enabled": "true"
-      },
-      "protocolMappers": [
-        {
-          "name": "aud-mcp-adapter-order",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "consentRequired": false,
-          "config": {
-            "included.client.audience": "mcp-adapter-order",
-            "access.token.claim": "true",
-            "id.token.claim": "false",
-            "introspection.token.claim": "true"
-          }
-        },
-        {
-          "name": "aud-mcp-adapter-logistics",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "consentRequired": false,
-          "config": {
-            "included.client.audience": "mcp-adapter-logistics",
-            "access.token.claim": "true",
-            "id.token.claim": "false",
-            "introspection.token.claim": "true"
-          }
-        },
-        {
-          "name": "aud-mcp-adapter-ticket",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "consentRequired": false,
-          "config": {
-            "included.client.audience": "mcp-adapter-ticket",
-            "access.token.claim": "true",
-            "id.token.claim": "false",
-            "introspection.token.claim": "true"
-          }
-        }
-      ]
-    },
-    {
-      "clientId": "mcp-adapter-order",
-      "name": "MCP Adapter (order)",
-      "enabled": true,
-      "publicClient": false,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "mcp-adapter-order-secret",
-      "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "attributes": {
-        "standard.token.exchange.enabled": "true"
-      },
-      "protocolMappers": [
-        {
-          "name": "aud-order-service",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "consentRequired": false,
-          "config": {
-            "included.client.audience": "order-service",
-            "access.token.claim": "true",
-            "id.token.claim": "false",
-            "introspection.token.claim": "true"
-          }
-        }
-      ]
-    },
-    {
-      "clientId": "mcp-adapter-logistics",
-      "name": "MCP Adapter (logistics)",
-      "enabled": true,
-      "publicClient": false,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "mcp-adapter-logistics-secret",
-      "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "attributes": {
-        "standard.token.exchange.enabled": "true"
-      },
-      "protocolMappers": [
-        {
-          "name": "aud-logistics-service",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "consentRequired": false,
-          "config": {
-            "included.client.audience": "logistics-service",
-            "access.token.claim": "true",
-            "id.token.claim": "false",
-            "introspection.token.claim": "true"
-          }
-        }
-      ]
-    },
-    {
-      "clientId": "mcp-adapter-ticket",
-      "name": "MCP Adapter (ticket)",
-      "enabled": true,
-      "publicClient": false,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "mcp-adapter-ticket-secret",
-      "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "attributes": {
-        "standard.token.exchange.enabled": "true"
-      },
-      "protocolMappers": [
-        {
-          "name": "aud-ticket-service",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "consentRequired": false,
-          "config": {
-            "included.client.audience": "ticket-service",
-            "access.token.claim": "true",
-            "id.token.claim": "false",
-            "introspection.token.claim": "true"
-          }
-        }
-      ]
-    },
-    {
-      "clientId": "order-service",
-      "name": "訂單系統 API（舊）",
-      "enabled": true,
-      "publicClient": false,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "order-service-unused",
-      "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "attributes": {}
-    },
-    {
-      "clientId": "logistics-service",
-      "name": "物流系統 API（舊）",
-      "enabled": true,
-      "publicClient": false,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "logistics-service-unused",
-      "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "attributes": {}
-    },
-    {
-      "clientId": "ticket-service",
-      "name": "工單系統 API（舊）",
-      "enabled": true,
-      "publicClient": false,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "ticket-service-unused",
-      "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
-      "attributes": {}
+      }
     }
   ],
   "users": [
@@ -336,9 +88,6 @@
           "value": "alice",
           "temporary": false
         }
-      ],
-      "realmRoles": [
-        "cs_agent"
       ]
     },
     {
@@ -354,9 +103,6 @@
           "value": "bob",
           "temporary": false
         }
-      ],
-      "realmRoles": [
-        "cs_agent"
       ]
     },
     {
@@ -372,9 +118,6 @@
           "value": "carol",
           "temporary": false
         }
-      ],
-      "realmRoles": [
-        "cs_supervisor"
       ]
     },
     {
@@ -390,9 +133,6 @@
           "value": "wang",
           "temporary": false
         }
-      ],
-      "realmRoles": [
-        "logistics_staff"
       ]
     },
     {
@@ -408,9 +148,6 @@
           "value": "dave",
           "temporary": false
         }
-      ],
-      "realmRoles": [
-        "sre"
       ]
     }
   ]

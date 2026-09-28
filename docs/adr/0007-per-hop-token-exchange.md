@@ -1,6 +1,6 @@
 # ADR-0007：逐段 token exchange，每張 token 只給下一站使用
 
-- 狀態：已採納（取代 [ADR-0002](0002-jwt-passthrough.md) 的「原樣轉發」做法）
+- 狀態：**改為選配的強化模式，目前未實作**。預設做法見 [ADR-0009](0009-sso-passthrough-with-profile-api.md)
 - 日期：2026-09-28
 
 ## 背景

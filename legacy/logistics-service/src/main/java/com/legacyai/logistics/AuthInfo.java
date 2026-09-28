@@ -15,8 +15,8 @@ final class AuthInfo {
     }
 
     /**
-     * 這張 token 是由哪個 client 取得的（azp）。
-     * 使用者從舊系統前端操作時是 logistics-web；經由 Copilot 時是 mcp-adapter-logistics（token exchange 後）。
+     * 這張 token 是由哪個 client 取得的（azp，已簽章、無法偽造）。
+     * 使用者從舊系統前端操作時是該系統的 web client；經由 Copilot 時是 copilot-web。
      * 舊系統只記錄，不依此改變權限判斷。
      */
     static String clientId(Authentication auth) {

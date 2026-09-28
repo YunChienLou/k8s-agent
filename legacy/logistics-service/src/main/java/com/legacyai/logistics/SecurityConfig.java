@@ -1,8 +1,6 @@
 package com.legacyai.logistics;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,15 +16,19 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * 典型的舊系統安全設定：驗證公司 SSO（Keycloak）簽發的 JWT，
- * 把 realm roles 轉成 ROLE_xxx，principal name 用 preferred_username。
+ * 典型的舊系統安全設定：
+ * <ul>
+ *   <li>SSO（Keycloak）負責「你是誰」：驗證 token 簽章與 issuer</li>
+ *   <li>公司 profile API 負責「你在本系統能做什麼」：角色轉成 ROLE_xxx</li>
+ * </ul>
+ * 同一張 SSO token 在各系統之間通用。
  */
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, ProfileClient profile) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -34,25 +36,16 @@ public class SecurityConfig {
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
                                  "/actuator/health/**", "/actuator/prometheus").permitAll()
                 .anyRequest().authenticated())
-            .oauth2ResourceServer(o -> o.jwt(jwt -> jwt.jwtAuthenticationConverter(keycloakConverter())));
+            .oauth2ResourceServer(o -> o.jwt(jwt -> jwt.jwtAuthenticationConverter(profileConverter(profile))));
         return http.build();
     }
 
-    static Converter<Jwt, AbstractAuthenticationToken> keycloakConverter() {
+    static Converter<Jwt, AbstractAuthenticationToken> profileConverter(ProfileClient profile) {
         return jwt -> {
-            List<GrantedAuthority> authorities = realmRoles(jwt).stream()
+            List<GrantedAuthority> authorities = profile.rolesOf(jwt).stream()
                 .map(role -> (GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + role))
                 .toList();
             return new JwtAuthenticationToken(jwt, authorities, jwt.getClaimAsString("preferred_username"));
         };
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Collection<String> realmRoles(Jwt jwt) {
-        Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
-        if (realmAccess == null || !(realmAccess.get("roles") instanceof Collection<?>)) {
-            return List.of();
-        }
-        return (Collection<String>) realmAccess.get("roles");
     }
 }

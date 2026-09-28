@@ -1,11 +1,11 @@
 server:
-  port: 8082
+  port: 8084
   error:
     include-message: always   # 讓 403/404 的原因回傳給呼叫端（之後 Agent 需要據此解釋）
 
 spring:
   application:
-    name: logistics-service
+    name: profile-service
   security:
     oauth2:
       resourceserver:
@@ -13,12 +13,6 @@ spring:
           # issuer-uri 只用來驗證 iss claim；有設 jwk-set-uri 時不會做 discovery
           issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8080/realms/demo}
           jwk-set-uri: ${OIDC_JWK_SET_URI:http://localhost:8080/realms/demo/protocol/openid-connect/certs}
-
-# 公司 profile API：查詢使用者在本系統的角色
-profile:
-  base-url: ${PROFILE_BASE_URL:http://localhost:8084}
-  system: logistics
-  cache-ttl: 60s
 
 management:
   endpoints:

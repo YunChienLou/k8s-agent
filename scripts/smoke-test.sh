@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 驗證 M0.5：audience 驗證、權限規則、申請單／簽核流程、token exchange 白名單
+# 驗證 M0.5：SSO token 各系統互通、profile API 權限、申請單／簽核流程
 # 需先 `cd infra && docker compose up -d --build`
 # 資料存在記憶體：重跑前先 `docker compose restart order-service logistics-service ticket-service` 還原假資料
 set -uo pipefail
@@ -8,6 +8,7 @@ cd "$(dirname "$0")"
 ORDER=http://localhost:8081
 LOGISTICS=http://localhost:8082
 TICKET=http://localhost:8083
+PROFILE=http://localhost:8084
 RUN_ID=$(date +%s)
 
 pass=0; fail=0
@@ -41,12 +42,14 @@ CAROL_TICKET=$(./token.sh carol ticket-web)        || exit 1
 WANG_LOGI=$(./token.sh wang logistics-web)         || exit 1
 DAVE_ORDER=$(./token.sh dave order-web)            || exit 1
 
-echo "[認證與 audience]"
+echo "[SSO 互通與 profile API]"
 call GET "$ORDER/api/orders/O-2001" -;                         expect "未帶 token → 401" 401
-call GET "$TICKET/api/tickets/T-1001" "$ALICE_TICKET";         expect "ticket-web 的 token 查工單" 200 "T-1001"
-call GET "$LOGISTICS/api/shipments/S-3001" "$ALICE_TICKET";    expect "發給工單系統的 token 拿去打物流 → 401" 401
-call GET "$TICKET/api/tickets/T-1001" "$ALICE_COPILOT";        expect "Copilot 的 token 不能直接打舊系統 → 401" 401
-call GET "$ORDER/api/orders/O-2001" "$DAVE_ORDER";             expect "sre 角色不能看訂單 → 403" 403
+call GET "$ORDER/api/orders/O-2001" "not-a-jwt";               expect "偽造的 token → 401" 401
+call GET "$PROFILE/api/me" "$ALICE_TICKET";                    expect "profile API 回傳 alice 在各系統的角色" 200 '"ticket":["cs_agent"]'
+call GET "$TICKET/api/tickets/T-1001" "$ALICE_TICKET";         expect "工單系統登入的 token 查工單" 200 "T-1001"
+call GET "$LOGISTICS/api/shipments/S-3001" "$ALICE_TICKET";    expect "同一張 SSO token 也能查物流（各系統互通）" 200 "S-3001"
+call GET "$ORDER/api/orders/O-2001" "$DAVE_ORDER";             expect "dave 在訂單系統沒有角色 → 403" 403
+call GET "$TICKET/api/tickets/T-1001" "$WANG_LOGI";            expect "wang 在工單系統沒有角色 → 403" 403
 
 echo "[工單權限]"
 call GET "$TICKET/api/tickets/T-1002" "$ALICE_TICKET";         expect "alice 查 bob 的工單 → 403" 403
@@ -88,26 +91,13 @@ call POST "$LOGISTICS/api/redirect-requests" "$ALICE_LOGI" \
   '{"shipmentId":"S-3003","newAddress":"台中市南屯區公益路二段 1 號"}'
 expect "配送中的 S-3003 不能申請改寄 → 409" 409
 
-echo "[Token exchange（ADR-0007）]"
-if T1=$(./exchange.sh copilot-agent copilot-agent-secret "$ALICE_COPILOT" mcp-adapter-logistics 2>/dev/null); then
-  ok "Agent 可以換成 Adapter 的 token"
-else bad "Agent 換 Adapter token 失敗（執行 ./exchange.sh 看錯誤訊息）"; T1=""; fi
-if ./exchange.sh copilot-agent copilot-agent-secret "$ALICE_COPILOT" logistics-service >/dev/null 2>&1; then
-  bad "Agent 不應該能直接換成舊系統的 token"
-else ok "Agent 不能直接換成舊系統的 token（白名單）"; fi
-if [[ -n "$T1" ]]; then
-  call GET "$LOGISTICS/api/shipments/S-3001" "$T1";            expect "給 Adapter 的 token 不能直接打舊系統 → 401" 401
-  if T2=$(./exchange.sh mcp-adapter-logistics mcp-adapter-logistics-secret "$T1" logistics-service 2>/dev/null); then
-    ok "Adapter 可以換成物流系統的 token"
-    call POST "$LOGISTICS/api/redirect-requests" "$T2" \
-      "{\"shipmentId\":\"S-3001\",\"newAddress\":\"台北市內湖區瑞光路 1 號\",\"channel\":\"AI_COPILOT\",\"externalRef\":\"CF-SMOKE-$RUN_ID-2\"}"
-    expect "經 token exchange 開單：申請人仍是 alice" 201 '"requestedBy":"alice"'
-    [[ "$BODY" == *'"submittedVia":"mcp-adapter-logistics"'* ]] && ok "舊系統記錄經由 mcp-adapter-logistics" || bad "舊系統未記錄經由的 client"
-  else bad "Adapter 換物流系統 token 失敗"; fi
-  if ./exchange.sh mcp-adapter-logistics mcp-adapter-logistics-secret "$T1" ticket-service >/dev/null 2>&1; then
-    bad "物流 Adapter 不應該能換成工單系統的 token"
-  else ok "物流 Adapter 不能換成工單系統的 token（白名單）"; fi
-fi
+echo "[經由 Copilot：passthrough（ADR-0009）]"
+call GET "$TICKET/api/tickets/T-1001" "$ALICE_COPILOT";        expect "Copilot 登入的 token 直接可用，權限仍由 profile API 決定" 200
+call GET "$TICKET/api/tickets/T-1002" "$ALICE_COPILOT";        expect "經由 Copilot 一樣不能越權 → 403" 403
+call POST "$LOGISTICS/api/redirect-requests" "$ALICE_COPILOT" \
+  "{\"shipmentId\":\"S-3001\",\"newAddress\":\"台北市內湖區瑞光路 1 號\",\"channel\":\"AI_COPILOT\",\"externalRef\":\"CF-SMOKE-$RUN_ID-2\"}"
+expect "經由 Copilot 開單：申請人是 alice" 201 '"requestedBy":"alice"'
+[[ "$BODY" == *'"submittedVia":"copilot-web"'* ]] && ok "舊系統從 token 的 azp 記錄「經由 copilot-web」" || bad "舊系統未記錄經由的 client"
 
 echo
 echo "結果：$pass 通過，$fail 失敗"
