@@ -65,8 +65,8 @@ services:
       - "5176:80"
     depends_on: [ticket-service, profile-service]
 
-  # ── Adapter（MCP server）：M1 先接訂單系統 ───────────────
-  adapter-order:
+  # ── Adapter（MCP server）：客服域一個 adapter（ADR-0011）；M1 先接訂單系統，M2 加上物流、工單 ──
+  adapter-cs:
     build: ../adapter
     environment:
       OIDC_ISSUER_URI: http://localhost:8080/realms/demo
@@ -77,7 +77,6 @@ services:
     depends_on: [keycloak, order-service]
 
   # ── 之後的里程碑會加入 ───────────────────────────────────
-  # adapter-logistics / adapter-ticket  (M2：同一個 image + 不同 tools.yaml)
   # agent        (M3：FastAPI + LangGraph)
   # postgres     (M2：稽核 log、待審核請求、run trace)
   # web          (M4：Vue3 Copilot)

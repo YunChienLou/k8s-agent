@@ -17,6 +17,14 @@ M1 spike 目標：先用寫死的一支 tool，驗證 **MCP 請求的 `Authoriza
 
 Spring AI 在 servlet 環境會讓 MCP server 以 `immediateExecution` 執行 tool，tool 與 Spring Security filter 跑在同一條 request thread，所以 `SecurityContextHolder` 可以直接取得使用者的 JWT。若改成 WebFlux 或 ASYNC 模式，這個前提就不成立，需改從 `McpTransportContext` 傳遞。
 
+## 自動化測試
+
+```bash
+cd adapter && mvn test
+```
+
+`McpAdapterTest` 以假 SSO（`TestAuth`）與假訂單系統（`LegacyOrderStub`，JDK HttpServer 走真正的 HTTP）驗證：身分驗證、`initialize`／`server/discover` 協定行為、token relay、欄位裁切、舊系統 404／403 的錯誤轉換。不需要啟動 Keycloak 或舊系統。
+
 ## 本機驗證
 
 ```bash

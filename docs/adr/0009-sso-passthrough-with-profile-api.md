@@ -42,7 +42,7 @@ Copilot ──token──▶ Agent ──token──▶ Adapter ──token─�
 
 - Token **只在 HTTP header 與記憶體中傳遞**：不進 prompt、不當 tool 參數、不寫 log、不寫資料庫、不寫 LangGraph checkpoint
 - 稽核只記錄 claim（`sub`、`preferred_username`、`azp`），不記錄 token
-- **NetworkPolicy**：每個 Adapter 只能連到自己那個舊系統；Agent 只能連 Adapter 與 LLM 端點
+- **NetworkPolicy**：每個 Adapter 只能連到同一業務域的舊系統（ADR-0011）；Agent 只能連 Adapter 與 LLM 端點
 - Agent **只能使用 MCP tool**，不提供 shell、程式執行或任意對外連線（ADR-0008）
 - 縮短 SSO token 效期，確認時由前端帶上當下有效的 token（沿用 ADR-0002 的規則）
 - 申請單標記來源管道 `AI_COPILOT`，並記錄 `azp`
