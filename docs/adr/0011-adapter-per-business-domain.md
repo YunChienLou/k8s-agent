@@ -1,4 +1,4 @@
-# ADR-0011：Adapter 依業務域分組部署，以 bulkhead 隔離各舊系統
+# ADR-0011：同一業務域共用一個 MCP server（adapter），以 bulkhead 隔離各舊系統
 
 - 狀態：已採納（部分取代 [ADR-0001](0001-adapter-pod-instead-of-changing-legacy.md) 的部署方式）
 - 日期：2026-09-28
@@ -21,7 +21,9 @@ ADR-0001 決定「同一個 adapter image，**每個舊系統**配一份 `tools.
 
 ## 決策
 
-### 1. 一個業務域一個 adapter Deployment
+### 1. 一個業務域共用一個 MCP server（adapter Deployment）
+
+- 同一業務域的所有舊系統由**同一個 MCP server** 對外提供 tool；Agent 每個業務域只連一個 MCP 端點
 
 - 業務域以 **K8s namespace** 為邊界，例如 `domain-cs`（訂單、物流、工單）、`domain-finance`
 - 每個 adapter 讀取 ConfigMap 掛載的 **`tools/` 目錄**，一份 yaml 對應一個舊系統
